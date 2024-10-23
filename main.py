@@ -18,8 +18,23 @@ class BrowserTab(QWidget):
         # Add the web engine view to the layout
         layout.addWidget(self.browser)
 
-        # Open a default page
+        # Open Google's home page by default
         self.browser.setUrl(QUrl("http://www.google.com"))
+
+        # Track the page load event to update the tab title
+        self.browser.urlChanged.connect(self.update_tab_title)
+
+    def update_tab_title(self):
+        # Get the current page title
+        page_title = self.browser.page().title()
+        if page_title:
+            # Update the tab title with the page title
+            index = self.parent().parent().indexOf(self)
+            self.parent().parent().setTabText(index, page_title)
+        else:
+            # If the title isn't available, set it as "#"
+            index = self.parent().parent().indexOf(self)
+            self.parent().parent().setTabText(index, "#")
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -56,7 +71,7 @@ class MainWindow(QMainWindow):
     def add_new_tab(self):
         # Create a new tab with a BrowserTab widget
         new_tab = BrowserTab()
-        index = self.tabs.addTab(new_tab, "New Tab")
+        index = self.tabs.addTab(new_tab, "#")  # Default tab title is "#"
         self.tabs.setCurrentIndex(index)
 
         # When a new tab is selected, update the address bar
