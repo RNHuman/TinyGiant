@@ -36,6 +36,10 @@ class BrowserTab(QWidget):
             index = self.parent().parent().indexOf(self)
             self.parent().parent().setTabText(index, "#")
 
+    def clear_history(self):
+        # Clear the browser history for this tab
+        self.browser.history().clear()
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -93,6 +97,13 @@ class MainWindow(QMainWindow):
         if current_tab is not None:
             url = current_tab.browser.url().toString()
             self.address_bar.setText(url)
+
+    def closeEvent(self, event):
+        # Clear history for all tabs when closing the application
+        for i in range(self.tabs.count()):
+            tab = self.tabs.widget(i)
+            tab.clear_history()
+        event.accept()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
