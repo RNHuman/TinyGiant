@@ -1,8 +1,8 @@
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout, QLineEdit, QPushButton, QToolBar, QAction
+    QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout, QLineEdit, QPushButton, QToolBar, QAction, QFileDialog
 )
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineDownloadItem, QWebEngineProfile
 from PyQt5.QtCore import QUrl
 
 class BrowserTab(QWidget):
@@ -55,10 +55,24 @@ class MainWindow(QMainWindow):
         self.toolbar = QToolBar()
         self.addToolBar(self.toolbar)
 
+        # Add Back and Forward buttons
+        back_action = QAction("Back", self)
+        back_action.triggered.connect(self.go_back)
+        self.toolbar.addAction(back_action)
+
+        forward_action = QAction("Forward", self)
+        forward_action.triggered.connect(self.go_forward)
+        self.toolbar.addAction(forward_action)
+
         # Add a new tab button to the toolbar
         new_tab_action = QAction("New Tab", self)
         new_tab_action.triggered.connect(self.add_new_tab)
         self.toolbar.addAction(new_tab_action)
+
+        # Add Print and Save as PDF button
+        print_action = QAction("Print / Save as PDF", self)
+        print_action.triggered.connect(self.print_page)
+        self.toolbar.addAction(print_action)
 
         # Create an address bar
         self.address_bar = QLineEdit()
@@ -71,6 +85,10 @@ class MainWindow(QMainWindow):
 
         # Add a default tab
         self.add_new_tab()
+
+        # Set up the download manager
+        profile = QWebEngineProfile.defaultProfile()
+        profile.downloadRequested.connect(self.handle_download)
 
     def add_new_tab(self):
         # Create a new tab with a BrowserTab widget
@@ -97,6 +115,34 @@ class MainWindow(QMainWindow):
         if current_tab is not None:
             url = current_tab.browser.url().toString()
             self.address_bar.setText(url)
+
+    def go_back(self):
+        # Navigate back in the current tab
+        current_tab = self.tabs.currentWidget()
+        if current_tab:
+            current_tab.browser.back()
+
+    def go_forward(self):
+        # Navigate forward in the current tab
+        current_tab = self.tabs.currentWidget()
+        if current_tab:
+            current_tab.browser.forward()
+
+    def print_page(self):
+        # Print the current page or save as PDF
+        current_tab = self.tabs.currentWidget()
+        if current_tab:
+            printer = QWebEngineView()
+            file_dialog = QFileDialog.getSaveFileName(self, "Save as PDF", "", "*.pdf")
+            if file_dialog[0]:
+                current_tab.browser.page().printToPdf(file_dialog[0])
+
+    def handle_download(self, download):
+        # Handle file downloads
+        save_path, _ = QFileDialog.getSaveFileName(self, "Save File", download.path())
+        if save_path:
+            download.setPath(save_path)
+            download.accept()
 
     def closeEvent(self, event):
         # Clear history for all tabs when closing the application
